@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1075675869886",
+    "project_id": "medvault-8a898",
+    "storage_bucket": "medvault-8a898.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075675869886:android:65d7976abf620f2887a4ef",
+        "android_client_info": {
+          "package_name": "com.example.medvault"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2EUr5WIfj18-jlz9g3XkD3fk_u6TqVDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
