@@ -12,7 +12,12 @@
           "package_name": "com.example.medvault"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1075675869886-3e8sp6t75uvsfcif11d5q6ugc4o5d69o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB2EUr5WIfj18-jlz9g3XkD3fk_u6TqVDw"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1075675869886-3e8sp6t75uvsfcif11d5q6ugc4o5d69o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1075675869886-6i5cbdbc3ekss6t29ub6ous2pehsejq1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.medvault"
+              }
+            }
+          ]
         }
       }
     }
