@@ -1,27 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'dart:async';
+import 'package:app/widgets/loading_animation.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final bool showLoading;
+  const SplashScreen({super.key, this.showLoading = false});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Timer(const Duration(seconds: 5), () {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/signup', // the route you want to go to
-        (Route<dynamic> route) => false, // remove all previous routes
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,8 +20,10 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SvgPicture.asset('assets/images/icon.svg', width: 150),
-
-            // App name
+            if (widget.showLoading) ...[
+              const SizedBox(height: 20),
+              const LoadingAnimation(size: 100),
+            ],
           ],
         ),
       ),

@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/material.dart';
+import 'package:app/services/database_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -37,14 +40,24 @@ class AuthService {
         await userCredential.user?.delete();
         // Clear Firebase session
         await _auth.signOut();
-
         throw FirebaseAuthException(
           code: 'user-not-found',
           message:
               'No account found for this Google email. Please sign up first.',
         );
       }
+      if (userCredential.additionalUserInfo?.isNewUser == true) {
+        final user = userCredential.user;
 
+        await DatabaseService().createOrUpdateUserData({
+          'account_info': {
+            'email': user?.email,
+            'profile_picture': user?.photoURL,
+            'created_at': FieldValue.serverTimestamp(),
+          },
+          'setup_complete': false,
+        });
+      }
       return userCredential;
     } catch (e) {
       print('Error signing in with Google: $e');
@@ -53,8 +66,13 @@ class AuthService {
   }
 
   // Sign out
-  Future<void> signOut() async {
+  Future<void> signOut(BuildContext context) async {
     await _googleSignIn.signOut();
     await _auth.signOut();
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/signup',
+      (Route<dynamic> route) => false,
+    );
   }
 }

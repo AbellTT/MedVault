@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:app/screens/splash_screen.dart';
+import 'package:app/services/auth_gate.dart';
 import 'package:app/screens/signup_screen.dart';
 import 'package:app/screens/login_screen.dart';
 import 'package:app/screens/forgot_password_screen.dart';
@@ -107,17 +107,12 @@ class _MyAppState extends State<MyApp> {
         ),
         dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF152034)),
         // cardTheme: const CardTheme(
-        //   color: Color(0xFF152034),
-        //   elevation: 2,
-        //   shadowColor: Colors.black54,
-        //   shape: RoundedRectangleBorder(
-        //     borderRadius: BorderRadius.all(Radius.circular(12)),
         //   ),
         // ),
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const SplashScreen(),
+        '/': (context) => AuthGate(toggleDarkMode: toggleDarkMode),
         '/signup': (context) => const SignUpScreen(),
         '/login': (context) => const LoginScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
