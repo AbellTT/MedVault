@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app/services/auth_service.dart';
 import 'package:app/services/database_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:app/services/connectivity_helper.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -18,8 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmController = TextEditingController();
-  final auth_service = new AuthService();
-  final database_service = new DatabaseService();
+  final auth_service = AuthService();
+  final database_service = DatabaseService();
   int selected = 0; // 0 = Sign Up, 1 = Login
   bool _obscurePassword = true; // initial state
   bool _isLoading =
@@ -28,6 +29,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
       false; // Added loading state to track Google authentication progress
   Future<bool> createuser() async {
     final messenger = ScaffoldMessenger.of(context);
+
+    // Check internet first
+    final hasInternet = await ConnectivityHelper.hasInternet();
+    if (!hasInternet) {
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              "No internet connection. Please connect to create an account.",
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return false;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -597,6 +615,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               });
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(context);
+
+                              // Check internet first
+                              final hasInternet =
+                                  await ConnectivityHelper.hasInternet();
+                              if (!hasInternet) {
+                                if (mounted) {
+                                  messenger.showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "No internet connection. Please connect to sign in with Google.",
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
 
                               try {
                                 final userCredential = await auth_service

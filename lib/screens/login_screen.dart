@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app/services/auth_service.dart';
+import 'package:app/services/connectivity_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +26,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<bool> loginUser() async {
     final messenger = ScaffoldMessenger.of(context);
+
+    // Check internet first
+    final hasInternet = await ConnectivityHelper.hasInternet();
+    if (!hasInternet) {
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("No internet connection. Please connect to log in."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return false;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -528,6 +544,23 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(context);
+
+                              // Check internet first
+                              final hasInternet =
+                                  await ConnectivityHelper.hasInternet();
+                              if (!hasInternet) {
+                                if (mounted) {
+                                  messenger.showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "No internet connection. Please connect to sign in with Google.",
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
 
                               try {
                                 final userCredential = await authService
