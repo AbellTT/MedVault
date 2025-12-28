@@ -16,42 +16,43 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset('assets/images/icon.svg', width: 150),
-            if (widget.showLoading) ...[
-              const SizedBox(height: 20),
-              const LoadingAnimation(size: 100),
-            ],
-          ],
-        ),
+        child: SvgPicture.asset('assets/images/icon.svg', width: 150),
       ),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.only(bottom: 80, left: 80, right: 80),
-        child: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: "Med",
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF277AFF),
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              TextSpan(
-                text: "Vault",
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AC0A0),
-                  fontFamily: 'Poppins',
-                ),
-              ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(bottom: 60, left: 20, right: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.showLoading) ...[
+              const LoadingAnimation(size: 80),
+              const SizedBox(height: 40),
             ],
-          ),
+            const Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: "Med",
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF277AFF),
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  TextSpan(
+                    text: "Vault",
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3AC0A0),
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

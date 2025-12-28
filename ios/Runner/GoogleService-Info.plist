@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1075675869886-6i5cbdbc3ekss6t29ub6ous2pehsejq1.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1075675869886-6i5cbdbc3ekss6t29ub6ous2pehsejq1</string>
+	<key>API_KEY</key>
+	<string>AIzaSyC2Q3WFl5oJWYBQjOBmMvF7gRZKKSGQrHY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1075675869886</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.medvault</string>
+	<key>PROJECT_ID</key>
+	<string>medvault-8a898</string>
+	<key>STORAGE_BUCKET</key>
+	<string>medvault-8a898.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1075675869886:ios:23813850f9347f1987a4ef</string>
+</dict>
+</plist>

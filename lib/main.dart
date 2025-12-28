@@ -105,7 +105,7 @@ class _MyAppState extends State<MyApp> {
           //bodyText2: TextStyle(color: Colors.white70),
           //headline6: TextStyle(color: Colors.white),
         ),
-        dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF152034)),
+        dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF152034)),
         // cardTheme: const CardTheme(
         //   ),
         // ),
