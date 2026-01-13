@@ -116,28 +116,10 @@ class NotificationService {
       // Notification actions usually just dismiss or background-run.
     } else if (response.actionId == 'snooze') {
       // Schedule a one-time snooze in 10 mins
-      await scheduleSnooze(med);
+      // await scheduleSnooze(med); // Removed snooze functionality
     } else if (response.actionId == 'complete') {
       await DatabaseService().completeMedication(med);
     }
-  }
-
-  Future<void> scheduleSnooze(Medication med) async {
-    final now = tz.TZDateTime.now(tz.local);
-    final scheduledDate = now.add(const Duration(minutes: 10));
-    final id = med.name.hashCode.abs() + 500; // Unique offset for snooze
-
-    await _notifications.zonedSchedule(
-      id,
-      'Snoozed: ${med.name}',
-      'Time to take your ${med.dosage}.',
-      scheduledDate,
-      _medicationNotificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: med.id,
-    );
   }
 
   Future<void> scheduleMedicationReminders(Medication med) async {

@@ -62,15 +62,13 @@ class _UploadPPScreenState extends State<UploadPPScreen>
         await DatabaseService().updateProfilePicture(imageFile);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Permission denied or error picking image. Please check settings.',
-            ),
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Permission denied or error picking file: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

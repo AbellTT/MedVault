@@ -79,30 +79,4 @@ class AlarmService {
     }
   }
 
-  /// Schedules a test alarm 10 seconds from now.
-  Future<void> scheduleTestAlarm() async {
-    final now = DateTime.now();
-    final scheduledDate = now.add(const Duration(seconds: 10));
-
-    final alarmSettings = AlarmSettings(
-      id: 99999,
-      dateTime: scheduledDate,
-      assetAudioPath: 'assets/audio/alert.mp3',
-      loopAudio: true,
-      vibrate: true,
-      volume: 0.5,
-      fadeDuration: 2.0,
-      warningNotificationOnKill: true,
-      androidFullScreenIntent: true,
-      notificationSettings: const NotificationSettings(
-        title: '⏰ MedVault Test Alarm',
-        body: 'Your test alarm is working! Locked screen test passed.',
-        stopButton: 'Stop',
-        icon: 'notification_icon',
-      ),
-    );
-
-    debugPrint('ALARM: Scheduling test alarm for $scheduledDate');
-    await Alarm.set(alarmSettings: alarmSettings);
-  }
 }
