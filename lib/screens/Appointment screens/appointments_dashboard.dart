@@ -1,7 +1,6 @@
 import 'package:app/models/appointment.dart';
 import 'package:app/screens/dashboard%20flow/dashboard_nav_bar.dart';
 import 'package:app/services/database_service.dart';
-import 'package:app/services/notification_service.dart';
 import 'package:app/widgets/loading_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -104,33 +103,6 @@ class _AppointmentsDashboardState extends State<AppointmentsDashboard> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          // Test Notification Button
-                          IconButton(
-                            onPressed: () {
-                              NotificationService().scheduleTestNotification(
-                                seconds: 10,
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Test notification scheduled in 10s',
-                                    style: TextStyle(
-                                      color: Colors.white.themedWith(isDark),
-                                    ),
-                                  ),
-                                  backgroundColor: const Color(
-                                    0xFF3AC0A0,
-                                  ).themedWith(isDark),
-                                ),
-                              );
-                            },
-                            icon: Icon(
-                              Icons.notifications_active_outlined,
-                              color: Colors.white.themedWith(isDark),
-                              size: 24,
-                            ),
-                            tooltip: 'Test Notification (10s)',
-                          ),
                           IconButton(
                             onPressed: () async {
                               final result = await Navigator.pushNamed(

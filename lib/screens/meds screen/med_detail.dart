@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:app/models/medication.dart';
 import 'package:app/services/database_service.dart';
-import 'package:app/services/alarm_service.dart';
 import 'package:app/utils/color_extensions.dart';
 
 class MedDetail extends StatefulWidget {
@@ -827,7 +826,7 @@ class _MedDetailState extends State<MedDetail> {
                 style: TextStyle(
                   fontSize: 14,
                   fontFamily: 'Poppins',
-                  color: const Color(0xFF43474B).themedWith(isDark),
+                  color: const Color(0xFF6C7278).themedWith(isDark),
                 ),
               ),
               const SizedBox(height: 8),
@@ -841,11 +840,18 @@ class _MedDetailState extends State<MedDetail> {
                     builder: (context, child) {
                       return Theme(
                         data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.light(
-                            primary: Color(0xFF3AC0A0),
-                            onPrimary: Colors.white,
-                            onSurface: Color(0xFF2B2F33),
-                          ),
+                          colorScheme: isDark
+                              ? const ColorScheme.dark(
+                                  primary: Color(0xFF3AC0A0),
+                                  onPrimary: Colors.white,
+                                  surface: Color(0xFF1E1E1E),
+                                  onSurface: Colors.white,
+                                )
+                              : const ColorScheme.light(
+                                  primary: Color(0xFF3AC0A0),
+                                  onPrimary: Colors.white,
+                                  onSurface: Color(0xFF2B2F33),
+                                ),
                         ),
                         child: child!,
                       );
@@ -859,33 +865,6 @@ class _MedDetailState extends State<MedDetail> {
                   }
                 },
                 decoration: _inputDecoration('--:-- --', isDark),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        await AlarmService().scheduleTestAlarm();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Test alarm scheduled (10s)! LOCK your screen now.',
-                              ),
-                              backgroundColor: Color(0xFF3AC0A0),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.alarm, size: 18),
-                      label: const Text('Test Alarm (10s)'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF3AC0A0),
-                      ),
-                    ),
-                  ),
-                ],
               ),
               const SizedBox(height: 12),
               Row(
@@ -907,7 +886,7 @@ class _MedDetailState extends State<MedDetail> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3AC0A0),
-                        foregroundColor: Colors.white,
+                        foregroundColor: Colors.white.themedWith(isDark),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
