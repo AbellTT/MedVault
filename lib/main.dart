@@ -4,7 +4,6 @@ import 'package:app/screens/signup_screen.dart';
 import 'package:app/screens/login_screen.dart';
 import 'package:app/screens/forgot_password_screen.dart';
 import 'package:app/screens/enter_otp_screen.dart';
-import 'package:app/screens/reset_password_screen.dart';
 import 'package:app/screens/user setup flow/get_started_screen.dart';
 import 'package:app/screens/user setup flow/personal_info_screen.dart';
 import 'package:app/screens/user setup flow/health_metrics.dart';
@@ -13,7 +12,7 @@ import 'package:app/screens/user setup flow/medical_info.dart';
 import 'package:app/screens/user setup flow/upload_pp.dart';
 import 'package:app/screens/dashboard flow/dashboard_screen.dart';
 import 'package:app/screens/Profile screen/profile_screen.dart';
-import 'package:app/screens/Diagnosis%20screens/diagnosis_dashBoard.dart';
+import 'package:app/screens/Diagnosis%20screens/diagnosis_dashboard.dart';
 import 'package:app/screens/Diagnosis%20screens/add_diagnosis.dart';
 import 'package:app/screens/Diagnosis%20screens/diagnosis_Detail.dart';
 import 'package:app/screens/meds screen/meds_dashboard.dart';
@@ -21,16 +20,27 @@ import 'package:app/screens/meds screen/med_detail.dart';
 import 'package:app/screens/meds screen/add_medicine.dart';
 import 'package:app/screens/meds screen/med_detailedit.dart';
 import 'package:app/screens/meds screen/med_reminders.dart';
+import 'package:app/screens/meds screen/alarm_ringing_screen.dart';
 import 'package:app/screens/Appointment screens/appointments_dashboard.dart';
 import 'package:app/screens/Appointment screens/add_appointment.dart';
 import 'package:app/screens/Appointment screens/appointment_detail.dart';
 import 'package:app/screens/Appointment screens/appointment_edit.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:app/firebase_options.dart';
+import 'package:app/services/notification_service.dart';
+import 'package:alarm/alarm.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Notifications
+  await NotificationService().init();
+
+  // Initialize Alarms
+  await Alarm.init();
+
   runApp(const MyApp());
 }
 
@@ -43,19 +53,46 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool isDarkMode = false;
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
-  void toggleDarkMode(bool value) {
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  void toggleDarkMode(bool value) async {
     setState(() {
       isDarkMode = value;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+    // Listen for alarms ringing to navigate to the ringing screen
+    Alarm.ringStream.stream.listen((alarmSettings) {
+      debugPrint('ALARM: Ringing triggered for ID: ${alarmSettings.id}');
+      navigatorKey.currentState?.pushNamed(
+        '/alarmRinging',
+        arguments: alarmSettings,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // Global key for background navigation
       debugShowCheckedModeBanner: false,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
 
+      // ... (omitting theme for brevity as I'm using replace_file_content and need to match carefully)
       theme: ThemeData(
         brightness: Brightness.light,
         scaffoldBackgroundColor: Colors.white,
@@ -117,7 +154,6 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/Enter-Otp': (context) => const EnterOtpScreen(),
-        '/Reset-Password': (context) => const ResetPasswordScreen(),
         '/getStarted': (context) => const GetStartedScreen(),
         '/personalinfo': (context) => const PersonalInfoScreen(),
         '/healthmetrics': (context) => const HealthMetricsScreen(),
@@ -135,6 +171,11 @@ class _MyAppState extends State<MyApp> {
         '/medDetail': (context) => const MedDetail(),
         '/medDetailEdit': (context) => const MedDetailEdit(),
         '/medReminders': (context) => const MedReminders(),
+        '/alarmRinging': (context) {
+          final settings =
+              ModalRoute.of(context)!.settings.arguments as AlarmSettings;
+          return AlarmRingingScreen(alarmSettings: settings);
+        },
         '/appointmentsDashboard': (context) => const AppointmentsDashboard(),
         '/addAppointment': (context) => const AddAppointment(),
         '/appointmentDetail': (context) => const AppointmentDetail(),

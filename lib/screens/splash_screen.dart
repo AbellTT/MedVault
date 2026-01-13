@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:app/widgets/loading_animation.dart';
+import 'package:app/utils/color_extensions.dart';
 
 class SplashScreen extends StatefulWidget {
   final bool showLoading;
@@ -13,8 +14,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white.themedWith(isDark),
       body: Center(
         child: SvgPicture.asset('assets/images/icon.svg', width: 150),
       ),
@@ -27,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
               const LoadingAnimation(size: 80),
               const SizedBox(height: 40),
             ],
-            const Text.rich(
+            Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
@@ -35,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF277AFF),
+                      color: const Color(0xFF277AFF).themedWith(isDark),
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -44,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF3AC0A0),
+                      color: const Color(0xFF3AC0A0).themedWith(isDark),
                       fontFamily: 'Poppins',
                     ),
                   ),

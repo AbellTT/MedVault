@@ -8,6 +8,8 @@ import 'package:app/widgets/loading_animation.dart';
 import 'package:app/services/connectivity_helper.dart';
 import 'package:app/services/biometric_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -67,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
@@ -76,9 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: const Color(0xFF3AC0A0).themed(context),
-              onPrimary: Colors.white.themed(context),
-              onSurface: const Color(0xFF2B2F33).themed(context),
+              primary: const Color(0xFF3AC0A0).themedWith(isDark),
+              onPrimary: Colors.white.themedWith(isDark),
+              onSurface: const Color(0xFF2B2F33).themedWith(isDark),
             ),
           ),
           child: child!,
@@ -97,6 +100,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+  }
+
+  Future<void> _pickProfileImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 500,
+        maxHeight: 500,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        await DatabaseService().updateProfilePicture(file);
+        setState(() {
+          profilePicUrl = image.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated!')),
+          );
+        }
+      }
+    } catch (e) {
+      // Error picking image
+    }
   }
 
   final allergyController = TextEditingController();
@@ -245,10 +275,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await user.updatePassword(newPasswordController.text);
 
       if (!mounted) return;
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Password updated successfully!'),
-          backgroundColor: const Color(0xFF4CAF50).themed(context),
+          backgroundColor: const Color(0xFF4CAF50).themedWith(isDark),
         ),
       );
 
@@ -263,20 +294,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         message = 'The new password is too weak.';
       }
       if (!mounted) return;
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.red.themed(context),
+          backgroundColor: Colors.red.themedWith(isDark),
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
             'Failed to update password. Please check your internet.',
           ),
-          backgroundColor: Colors.red.themed(context),
+          backgroundColor: Colors.red.themedWith(isDark),
         ),
       );
     } finally {
@@ -292,12 +325,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!hasInternet) {
         if (!mounted) return;
+        final bool isDark = Theme.of(context).brightness == Brightness.dark;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
               'You are offline. Your changes will be saved locally and synced when you\'re back online.',
             ),
-            backgroundColor: const Color(0xFFFFA726).themed(context),
+            backgroundColor: const Color(0xFFFFA726).themedWith(isDark),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -320,6 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'account_info': {
           'email': emailController.text.trim(),
           'phone_number': phoneController.text.trim(),
+          'profile_picture': profilePicUrl,
         },
         'emergency_contact': {
           'contact_name': emergencyContactController.text.trim(),
@@ -328,10 +363,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
 
       if (!mounted) return;
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile updated successfully!'),
-          backgroundColor: const Color(0xFF4CAF50).themed(context),
+          backgroundColor: const Color(0xFF4CAF50).themedWith(isDark),
         ),
       );
     }
@@ -339,6 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Determine values for header and quick info cards
     final firstName = firstNameController.text.isNotEmpty
         ? firstNameController.text
@@ -362,14 +399,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final displayBloodGroup = selectedBloodGroup ?? "N/A";
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255).themed(context),
+      backgroundColor: const Color.fromARGB(
+        255,
+        255,
+        255,
+        255,
+      ).themedWith(isDark),
       body: Column(
         children: [
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(40, 40, 40, 20),
             decoration: BoxDecoration(
-              color: const Color(0xFF277AFF).themed(context),
+              color: const Color(0xFF277AFF).themedWith(isDark),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -378,73 +420,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   'Profile',
                   style: TextStyle(
-                    color: Colors.white.themed(context),
+                    color: Colors.white.themedWith(isDark),
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
                   ),
                 ),
                 const SizedBox(height: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.white
-                          .withValues(alpha: 0.75)
-                          .themed(context),
-                    ),
-                    borderRadius: BorderRadius.circular(10000),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10000),
-                    child: SizedBox(
-                      width: 70,
-                      height: 70,
-                      child:
-                          profilePicUrl != null &&
-                              profilePicUrl!.startsWith('http')
-                          ? Image.network(
-                              profilePicUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.white
-                                      .withValues(alpha: 0.24)
-                                      .themed(context),
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.black.themed(context),
-                                    size: 20,
-                                  ),
-                                );
-                              },
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.24)
-                                          .themed(context),
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white.themed(context),
-                                          strokeWidth: 2,
+                GestureDetector(
+                  onTap: _pickProfileImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            width: 2,
+                            color: Colors.white
+                                .withValues(alpha: 0.75)
+                                .themedWith(isDark),
+                          ),
+                          borderRadius: BorderRadius.circular(10000),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10000),
+                          child: SizedBox(
+                            width: 70,
+                            height: 70,
+                            child:
+                                profilePicUrl != null &&
+                                    profilePicUrl!.startsWith('http')
+                                ? Image.network(
+                                    profilePicUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.24)
+                                            .themedWith(isDark),
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.black.themedWith(
+                                            isDark,
+                                          ),
+                                          size: 20,
                                         ),
-                                      ),
-                                    );
-                                  },
-                            )
-                          : Container(
-                              color: Colors.white
-                                  .withValues(alpha: 0.24)
-                                  .themed(context),
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.black.themed(context),
-                                size: 20,
-                              ),
+                                      );
+                                    },
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null) {
+                                            return child;
+                                          }
+                                          return Container(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.24)
+                                                .themedWith(isDark),
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white.themedWith(
+                                                  isDark,
+                                                ),
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                  )
+                                : profilePicUrl != null &&
+                                      profilePicUrl!.isNotEmpty
+                                ? Image.file(
+                                    File(profilePicUrl!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.24)
+                                            .themedWith(isDark),
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.black.themedWith(
+                                            isDark,
+                                          ),
+                                          size: 20,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Container(
+                                    color: Colors.white
+                                        .withValues(alpha: 0.24)
+                                        .themedWith(isDark),
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.black.themedWith(isDark),
+                                      size: 20,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF277AFF).themedWith(isDark),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.themedWith(isDark),
+                              width: 2,
                             ),
-                    ),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.white.themedWith(isDark),
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -454,7 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextSpan(
                         text: "$firstName $lastName\n",
                         style: TextStyle(
-                          color: Colors.white.themed(context),
+                          color: Colors.white.themedWith(isDark),
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'Poppins',
@@ -465,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           color: Colors.white
                               .withValues(alpha: 0.70)
-                              .themed(context),
+                              .themedWith(isDark),
                           fontSize: 15,
                         ),
                       ),
@@ -497,11 +592,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   212,
                                   212,
                                   212,
-                                ).themed(context),
+                                ).themedWith(isDark),
                                 width: 1,
                               ),
                             ),
-                            color: Colors.white.themed(context),
+                            color: Colors.white.themedWith(isDark),
                             child: Padding(
                               padding: const EdgeInsets.all(20),
                               child: Column(
@@ -518,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           fontWeight: FontWeight.w500,
                                           color: const Color(
                                             0xFF2B2F33,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                           fontFamily: 'poppins',
                                         ),
                                       ),
@@ -529,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         colorFilter: ColorFilter.mode(
                                           const Color(
                                             0xFF2B2F33,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                           BlendMode.srcIn,
                                         ),
                                       ),
@@ -544,7 +639,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "user",
                                     iconColor: const Color(
                                       0xFF277AFF,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Please enter first name';
@@ -561,7 +656,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "user",
                                     iconColor: const Color(
                                       0xFF277AFF,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Please enter last name';
@@ -581,7 +676,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         borderSide: BorderSide(
                                           color: const Color(
                                             0xFFE0E0E0,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
@@ -589,7 +684,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         borderSide: BorderSide(
                                           color: const Color(
                                             0xFFE0E0E0,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
@@ -597,7 +692,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         borderSide: BorderSide(
                                           color: const Color(
                                             0xFF277AFF,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                           width: 1.5,
                                         ),
                                       ),
@@ -613,7 +708,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           colorFilter: ColorFilter.mode(
                                             const Color(
                                               0xFF277AFF,
-                                            ).themed(context),
+                                            ).themedWith(isDark),
                                             BlendMode.srcIn,
                                           ),
                                         ),
@@ -625,7 +720,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ),
                                       hintText: 'DD/MM/YYYY',
                                       filled: true,
-                                      fillColor: Colors.white.themed(context),
+                                      fillColor: Colors.white.themedWith(
+                                        isDark,
+                                      ),
                                     ),
                                     onTap: () => _selectDate(context),
                                     readOnly: true,
@@ -645,7 +742,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "Hash",
                                     iconColor: const Color(
                                       0xFF277AFF,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -685,7 +782,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           borderSide: BorderSide(
                                             color: const Color(
                                               0xFFE0E0E0,
-                                            ).themed(context),
+                                            ).themedWith(isDark),
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
@@ -695,7 +792,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           borderSide: BorderSide(
                                             color: const Color(
                                               0xFFE0E0E0,
-                                            ).themed(context),
+                                            ).themedWith(isDark),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
@@ -705,7 +802,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           borderSide: BorderSide(
                                             color: const Color(
                                               0xFF277AFF,
-                                            ).themed(context),
+                                            ).themedWith(isDark),
                                             width: 1.5,
                                           ),
                                         ),
@@ -718,7 +815,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             colorFilter: ColorFilter.mode(
                                               const Color(
                                                 0xFF277AFF,
-                                              ).themed(context),
+                                              ).themedWith(isDark),
                                               BlendMode.srcIn,
                                             ),
                                           ),
@@ -728,12 +825,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               minWidth: 20,
                                               minHeight: 20,
                                             ),
-                                        suffixIcon: Icon(Icons.arrow_drop_down),
+                                        suffixIcon: const Icon(
+                                          Icons.arrow_drop_down,
+                                        ),
                                         filled: true,
-                                        fillColor: Colors.white.themed(context),
+                                        fillColor: Colors.white.themedWith(
+                                          isDark,
+                                        ),
                                       ),
-                                      dropdownColor: Colors.white.themed(
-                                        context,
+                                      dropdownColor: Colors.white.themedWith(
+                                        isDark,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                       focusColor: const Color.fromARGB(
@@ -754,7 +855,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   style: TextStyle(
                                                     color: const Color(
                                                       0xFF2B2F33,
-                                                    ).themed(context),
+                                                    ).themedWith(isDark),
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w500,
                                                   ),
@@ -773,7 +874,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             style: TextStyle(
                                               color: const Color(
                                                 0xFF2B2F33,
-                                              ).themed(context),
+                                              ).themedWith(isDark),
                                             ),
                                           ),
                                         );
@@ -789,7 +890,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         }
                                         return null;
                                       },
-                                      hint: Text('Select Blood Group'),
+                                      hint: const Text('Select Blood Group'),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -800,7 +901,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "Ruler",
                                     iconColor: const Color(
                                       0xFF4CAF50,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Please enter height';
@@ -821,7 +922,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "Weight",
                                     iconColor: const Color(
                                       0xFF277AFF,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -843,7 +944,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "heart",
                                     iconColor: const Color(
                                       0xFFE91E63,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Please enter blood pressure';
@@ -865,7 +966,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "droplet",
                                     iconColor: const Color(
                                       0xFF277AFF,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -887,7 +988,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "e",
                                     iconColor: const Color(
                                       0xFF4CAF50,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.emailAddress,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -910,7 +1011,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "p",
                                     iconColor: const Color(
                                       0xFFE91E63,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.phone,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -929,7 +1030,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: "i",
                                     iconColor: const Color(
                                       0xFFFF5252,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     keyboardType: TextInputType.phone,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -950,7 +1051,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           controller: allergyController,
                                           decoration: InputDecoration(
                                             prefixIcon: Padding(
-                                              padding: EdgeInsets.only(
+                                              padding: const EdgeInsets.only(
                                                 left: 12,
                                                 right: 10,
                                               ),
@@ -958,7 +1059,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 Icons.warning_amber_outlined,
                                                 color: const Color(
                                                   0xFFFFA726,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                                 size: 21,
                                               ),
                                             ),
@@ -972,20 +1073,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             hintStyle: TextStyle(
                                               color: const Color(
                                                 0xFF999999,
-                                              ).themed(context),
+                                              ).themedWith(isDark),
                                               fontSize: 15,
                                             ),
                                             filled: true,
                                             fillColor: const Color(0xFFFFF8E1)
                                                 .withValues(alpha: 0.3)
-                                                .themed(context),
+                                                .themedWith(isDark),
                                             border: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               borderSide: BorderSide(
                                                 color: const Color(
                                                   0xFFE0E0E0,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                               ),
                                             ),
                                             enabledBorder: OutlineInputBorder(
@@ -994,7 +1095,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               borderSide: BorderSide(
                                                 color: const Color(
                                                   0xFFE0E0E0,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                               ),
                                             ),
                                             focusedBorder: OutlineInputBorder(
@@ -1003,7 +1104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               borderSide: BorderSide(
                                                 color: const Color(
                                                   0xFF277AFF,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                                 width: 1.5,
                                               ),
                                             ),
@@ -1020,7 +1121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         decoration: BoxDecoration(
                                           color: const Color(
                                             0xFFFFA726,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -1040,7 +1141,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           },
                                           icon: Icon(
                                             Icons.add,
-                                            color: Colors.white.themed(context),
+                                            color: Colors.white.themedWith(
+                                              isDark,
+                                            ),
                                             size: 24,
                                           ),
                                           padding: const EdgeInsets.all(8),
@@ -1062,7 +1165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFFEBEE)
                                             .withValues(alpha: 0.3)
-                                            .themed(context),
+                                            .themedWith(isDark),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -1076,7 +1179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 fontSize: 15,
                                                 color: const Color(
                                                   0xFF1A1A1A,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                                 fontFamily: 'Poppins',
                                               ),
                                             ),
@@ -1091,7 +1194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               Icons.close,
                                               color: const Color(
                                                 0xFFE53935,
-                                              ).themed(context),
+                                              ).themedWith(isDark),
                                               size: 20,
                                             ),
                                           ),
@@ -1123,7 +1226,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.white.themed(context),
+                                          color: Colors.white.themedWith(
+                                            isDark,
+                                          ),
                                           fontFamily: 'Poppins',
                                         ),
                                       ),
@@ -1147,11 +1252,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 212,
                                 212,
                                 212,
-                              ).themed(context),
+                              ).themedWith(isDark),
                               width: 1,
                             ),
                           ),
-                          color: Colors.white.themed(context),
+                          color: Colors.white.themedWith(isDark),
                           child: Padding(
                             padding: const EdgeInsets.all(20),
                             child: Column(
@@ -1164,7 +1269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       decoration: BoxDecoration(
                                         color: const Color(
                                           0xFFE8F1FF,
-                                        ).themed(context),
+                                        ).themedWith(isDark),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: SvgPicture.asset(
@@ -1174,7 +1279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         colorFilter: ColorFilter.mode(
                                           const Color(
                                             0xFF277AFF,
-                                          ).themed(context),
+                                          ).themedWith(isDark),
                                           BlendMode.srcIn,
                                         ),
                                       ),
@@ -1188,7 +1293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         fontFamily: 'Poppins',
                                         color: const Color(
                                           0xFF2B2F33,
-                                        ).themed(context),
+                                        ).themedWith(isDark),
                                       ),
                                     ),
                                   ],
@@ -1201,7 +1306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.white
                                         .withValues(alpha: 0.05)
-                                        .themed(context),
+                                        .themedWith(isDark),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       width: 1,
@@ -1210,7 +1315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         158,
                                         158,
                                         158,
-                                      ).themed(context),
+                                      ).themedWith(isDark),
                                     ),
                                   ),
                                   child: Row(
@@ -1235,7 +1340,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           colorFilter: ColorFilter.mode(
                                             const Color(
                                               0xFF4CAF50,
-                                            ).themed(context),
+                                            ).themedWith(isDark),
                                             BlendMode.srcIn,
                                           ),
                                         ),
@@ -1253,7 +1358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 fontWeight: FontWeight.w500,
                                                 color: const Color(
                                                   0xFF1A1A1A,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                                 fontFamily: 'Poppins',
                                               ),
                                             ),
@@ -1267,7 +1372,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   89,
                                                   89,
                                                   89,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                               ),
                                             ),
                                           ],
@@ -1280,7 +1385,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   _toggleBiometrics(value)
                                             : null,
                                         thumbColor: WidgetStateProperty.all(
-                                          Colors.white.themed(context),
+                                          Colors.white.themedWith(isDark),
                                         ),
                                         trackColor:
                                             WidgetStateProperty.resolveWith<
@@ -1289,8 +1394,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               if (states.contains(
                                                 WidgetState.disabled,
                                               )) {
-                                                return Colors.grey.themed(
-                                                  context,
+                                                return Colors.grey.themedWith(
+                                                  isDark,
                                                 );
                                               }
                                               return states.contains(
@@ -1298,7 +1403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   )
                                                   ? const Color(
                                                       0xFF3AC0A0,
-                                                    ).themed(context)
+                                                    ).themedWith(isDark)
                                                   : const Color.fromARGB(
                                                       133,
                                                       189,
@@ -1327,11 +1432,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                               side: BorderSide(
-                                color: Color.fromARGB(178, 212, 212, 212),
+                                color: const Color.fromARGB(
+                                  178,
+                                  212,
+                                  212,
+                                  212,
+                                ).themedWith(isDark),
                                 width: 1,
                               ),
                             ),
-                            color: Colors.white.themed(context),
+                            color: Colors.white.themedWith(isDark),
                             child: Padding(
                               padding: const EdgeInsets.all(20),
                               child: Form(
@@ -1342,7 +1452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(15),
                                     color: Colors.white
                                         .withValues(alpha: 0.05)
-                                        .themed(context),
+                                        .themedWith(isDark),
                                     border: Border.all(
                                       width: 1,
                                       color: const Color.fromARGB(
@@ -1350,7 +1460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         158,
                                         158,
                                         158,
-                                      ).themed(context),
+                                      ).themedWith(isDark),
                                     ),
                                   ),
                                   child: Column(
@@ -1364,7 +1474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             decoration: BoxDecoration(
                                               color: const Color(
                                                 0xFFE8F1FF,
-                                              ).themed(context),
+                                              ).themedWith(isDark),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                             ),
@@ -1375,7 +1485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               colorFilter: ColorFilter.mode(
                                                 const Color(
                                                   0xFF277AFF,
-                                                ).themed(context),
+                                                ).themedWith(isDark),
                                                 BlendMode.srcIn,
                                               ),
                                             ),
@@ -1393,7 +1503,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   fontFamily: 'Poppins',
                                                   color: const Color(
                                                     0xFF2B2F33,
-                                                  ).themed(context),
+                                                  ).themedWith(isDark),
                                                 ),
                                               ),
                                               Text(
@@ -1405,7 +1515,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                     120,
                                                     120,
                                                     120,
-                                                  ).themed(context),
+                                                  ).themedWith(isDark),
                                                   fontFamily: "inter",
                                                 ),
                                               ),
@@ -1514,7 +1624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                       CircularProgressIndicator(
                                                         strokeWidth: 2,
                                                         color: Colors.white
-                                                            .themed(context),
+                                                            .themedWith(isDark),
                                                       ),
                                                 )
                                               : Text(
@@ -1522,10 +1632,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w600,
-                                                    color: Colors.white.themed(
-                                                      context,
-                                                    ),
-                                                    fontFamily: 'Poppins',
+                                                    color: Colors.white
+                                                        .themedWith(isDark),
                                                   ),
                                                 ),
                                         ),
@@ -1553,11 +1661,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 212,
                                 212,
                                 212,
-                              ).themed(context),
+                              ).themedWith(isDark),
                               width: 1,
                             ),
                           ),
-                          color: Colors.white.themed(context),
+                          color: Colors.white.themedWith(isDark),
                           child: Padding(
                             padding: const EdgeInsets.all(20),
                             child: Column(
@@ -1570,7 +1678,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     fontWeight: FontWeight.w500,
                                     color: const Color(
                                       0xFF2B2F33,
-                                    ).themed(context),
+                                    ).themedWith(isDark),
                                     fontFamily: 'Poppins',
                                   ),
                                 ),
@@ -1582,7 +1690,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         'Height',
                                         displayHeight,
                                         'blue',
-                                        const Color(0xFF277AFF).themed(context),
+                                        const Color(
+                                          0xFF277AFF,
+                                        ).themedWith(isDark),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -1591,7 +1701,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         'Weight',
                                         displayWeight,
                                         'green',
-                                        const Color(0xFF4CAF50).themed(context),
+                                        const Color(
+                                          0xFF4CAF50,
+                                        ).themedWith(isDark),
                                       ),
                                     ),
                                   ],
@@ -1604,7 +1716,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         'Blood Group',
                                         displayBloodGroup,
                                         'blue',
-                                        const Color(0xFF277AFF).themed(context),
+                                        const Color(
+                                          0xFF277AFF,
+                                        ).themedWith(isDark),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -1613,7 +1727,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         'Age',
                                         displayAge,
                                         'green',
-                                        const Color(0xFF4CAF50).themed(context),
+                                        const Color(
+                                          0xFF4CAF50,
+                                        ).themedWith(isDark),
                                       ),
                                     ),
                                   ],
@@ -1637,13 +1753,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoLabel(String label) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 14,
-          color: const Color(0xFF2B2F33).themed(context),
+          color: const Color(0xFF2B2F33).themedWith(isDark),
           fontWeight: FontWeight.normal,
           fontFamily: 'Poppins',
         ),
@@ -1659,6 +1776,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextInputType? keyboardType,
     bool? number = false,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return icon == 'p' || icon == 'i'
         ? TextFormField(
             controller: icon == 'p'
@@ -1671,19 +1789,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFFE0E0E0).themed(context),
+                  color: const Color(0xFFE0E0E0).themedWith(isDark),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFFE0E0E0).themed(context),
+                  color: const Color(0xFFE0E0E0).themedWith(isDark),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFF277AFF).themed(context),
+                  color: const Color(0xFF277AFF).themedWith(isDark),
                   width: 1.5,
                 ),
               ),
@@ -1701,7 +1819,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       '  +251',
                       style: TextStyle(
-                        color: Colors.black.themed(context),
+                        color: Colors.black.themedWith(isDark),
                         fontSize: 16,
                       ),
                     ),
@@ -1715,7 +1833,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               filled: true,
-              fillColor: Colors.white.themed(context),
+              fillColor: Colors.white.themedWith(isDark),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -1768,11 +1886,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 minHeight: 20,
               ),
               filled: true,
-              fillColor: Colors.white.themed(context),
+              fillColor: Colors.white.themedWith(isDark),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFFE0E0E0).themed(context),
+                  color: const Color(0xFFE0E0E0).themedWith(isDark),
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -1782,21 +1900,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFFE0E0E0).themed(context),
+                  color: const Color(0xFFE0E0E0).themedWith(isDark),
                 ),
               ),
 
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: const Color(0xFF277AFF).themed(context),
+                  color: const Color(0xFF277AFF).themedWith(isDark),
                   width: 1.5,
                 ),
               ),
             ),
             style: TextStyle(
               fontSize: 16,
-              color: const Color(0xFF1A1A1A).themed(context),
+              color: const Color(0xFF1A1A1A).themedWith(isDark),
               fontFamily: 'Poppins',
             ),
           );
@@ -1809,6 +1927,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onToggleVisibility,
     String? Function(String?)? validator,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -1816,28 +1935,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          color: const Color.fromARGB(255, 137, 137, 137).themed(context),
+          color: const Color.fromARGB(255, 137, 137, 137).themedWith(isDark),
           fontSize: 16,
           fontFamily: 'Poppins',
         ),
         filled: true,
-        fillColor: Colors.white.themed(context),
+        fillColor: Colors.white.themedWith(isDark),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: const Color(0xFFE0E0E0).themed(context),
+            color: const Color(0xFFE0E0E0).themedWith(isDark),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: const Color(0xFFE0E0E0).themed(context),
+            color: const Color(0xFFE0E0E0).themedWith(isDark),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: const Color(0xFF277AFF).themed(context),
+            color: const Color(0xFF277AFF).themedWith(isDark),
             width: 1.5,
           ),
         ),
@@ -1847,7 +1966,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             obscureText
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: const Color(0xFF999999).themed(context),
+            color: const Color(0xFF999999).themedWith(isDark),
             size: 20,
           ),
         ),
@@ -1862,6 +1981,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String bgColor,
     Color valueColor,
   ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1883,7 +2003,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 13,
-              color: const Color(0xFF666666).themed(context),
+              color: const Color(0xFF666666).themedWith(isDark),
               fontFamily: 'Poppins',
             ),
           ),

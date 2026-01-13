@@ -10,7 +10,7 @@ import 'package:app/models/appointment.dart';
 import 'package:app/models/diagnosis_item.dart';
 import 'package:app/services/database_service.dart';
 import 'package:app/utils/color_extensions.dart';
-//import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<bool> toggleDarkMode;
@@ -28,9 +28,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String userEmail = '';
   VitalStats? vitalStats;
   Appointment? nextAppointment;
-  List<DiagnosisItem> diagnoses = [];
   List<Medication> medicationReminders = [];
+  List<Medication> _filteredMedicationReminders = [];
   List<_Dose> _displayDoses = [];
+  List<_Dose> _filteredDisplayDoses = [];
+  List<DiagnosisItem> diagnoses = [];
+  List<DiagnosisItem> _filteredDiagnoses = [];
+
+  // Data for global search
+  List<Appointment> allAppointments = [];
+  List<Medication> allMedications = [];
+  List<_GlobalSearchResult> _globalSearchResults = [];
+
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -99,6 +108,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (mounted) {
         setState(() {
+          allAppointments = appts;
+          allMedications = meds;
+
           // 1. Single nearest uncompleted appointment
           final now = DateTime.now();
           final upcomingAppts = appts.where((a) {
@@ -132,12 +144,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
           medicationReminders = meds
               .where((m) => !m.isCompleted && m.enableReminders)
               .toList();
+          _filteredMedicationReminders = medicationReminders;
           _updateDisplayDoses();
+          _filterResults(_searchController.text);
         });
       }
     } catch (e) {
       debugPrint('Error fetching dashboard secondary data: $e');
     }
+  }
+
+  void _filterResults(String query) {
+    final trimmedQuery = query.trim().toLowerCase();
+    if (trimmedQuery.isEmpty) {
+      setState(() {
+        _filteredDiagnoses = diagnoses;
+        _filteredDisplayDoses = _displayDoses;
+        _filteredMedicationReminders = medicationReminders;
+        _globalSearchResults = [];
+      });
+      return;
+    }
+
+    // 1. Filter diagnoses
+    final matchedDiagnoses = diagnoses
+        .where(
+          (d) =>
+              d.title.toLowerCase().contains(trimmedQuery) ||
+              d.description.toLowerCase().contains(trimmedQuery),
+        )
+        .toList();
+
+    // 2. Filter display doses
+    final matchedDoses = _displayDoses
+        .where(
+          (d) =>
+              d.med.name.toLowerCase().contains(trimmedQuery) ||
+              d.med.dosage.toLowerCase().contains(trimmedQuery),
+        )
+        .toList();
+
+    // 3. Filter medication reminders
+    final matchedMedicationReminders = medicationReminders
+        .where(
+          (m) =>
+              m.name.toLowerCase().contains(trimmedQuery) ||
+              m.dosage.toLowerCase().contains(trimmedQuery) ||
+              m.instructions.toLowerCase().contains(trimmedQuery),
+        )
+        .toList();
+
+    // 4. Global search results aggregation
+    final List<_GlobalSearchResult> globalResults = [];
+
+    // Appointments (Global)
+    for (var a in allAppointments) {
+      if (a.doctorName.toLowerCase().contains(trimmedQuery) ||
+          a.specialty.toLowerCase().contains(trimmedQuery) ||
+          a.location.toLowerCase().contains(trimmedQuery)) {
+        globalResults.add(
+          _GlobalSearchResult(
+            title: a.doctorName,
+            subtitle: "${a.specialty} • ${a.formattedDate}",
+            type: _SearchResultType.appointment,
+            originalObject: a,
+          ),
+        );
+      }
+    }
+
+    // Medications (Global)
+    for (var m in allMedications) {
+      if (m.name.toLowerCase().contains(trimmedQuery) ||
+          m.dosage.toLowerCase().contains(trimmedQuery)) {
+        globalResults.add(
+          _GlobalSearchResult(
+            title: m.name,
+            subtitle: "${m.dosage} • ${m.frequency}",
+            type: _SearchResultType.medication,
+            originalObject: m,
+          ),
+        );
+      }
+    }
+
+    // Diagnoses (Global)
+    for (var d in diagnoses) {
+      if (d.title.toLowerCase().contains(trimmedQuery) ||
+          d.description.toLowerCase().contains(trimmedQuery)) {
+        globalResults.add(
+          _GlobalSearchResult(
+            title: d.title,
+            subtitle: d.statusText,
+            type: _SearchResultType.diagnosis,
+            originalObject: d,
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      _filteredDiagnoses = matchedDiagnoses;
+      _filteredDisplayDoses = matchedDoses;
+      _filteredMedicationReminders = matchedMedicationReminders;
+      _globalSearchResults = globalResults;
+    });
   }
 
   void _updateDisplayDoses() {
@@ -186,6 +297,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (upcoming.length > 1) orderedDoses.add(upcoming[1]);
     }
     _displayDoses = orderedDoses;
+    _filteredDisplayDoses = orderedDoses;
   }
 
   @override
@@ -205,40 +317,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
             255,
             255,
             255,
-          ).themed(context),
+          ).themedWith(isDark),
           body: isLoading
               ? const LoadingAnimation()
               : Column(
                   children: [
                     _buildHeader(isDark),
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildVitalStat(context, vitalStats, isDark),
-                            const SizedBox(height: 20),
-                            _buildNextAppointment(
-                              context,
-                              nextAppointment,
-                              isDark,
+                      child: Stack(
+                        children: [
+                          SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildVitalStat(context, vitalStats, isDark),
+                                const SizedBox(height: 20),
+                                _buildNextAppointment(
+                                  context,
+                                  nextAppointment,
+                                  isDark,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildDiagnosis(
+                                  context,
+                                  _filteredDiagnoses,
+                                  isDark,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildMedicationReminder(
+                                  context,
+                                  _filteredMedicationReminders,
+                                  isDark,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 20),
-                            _buildDiagnosis(context, diagnoses, isDark),
-                            const SizedBox(height: 20),
-                            _buildMedicationReminder(
-                              context,
-                              medicationReminders,
-                              isDark,
-                            ),
-                          ],
-                        ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: _buildSearchResultsOverlay(isDark),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-          bottomNavigationBar: const DashboardNavigationBar(selectedIndex: 2),
+          bottomNavigationBar: DashboardNavigationBar(
+            selectedIndex: 2,
+            onReturn: () => _loadDashboardData(),
+          ),
         ),
         // 2) Backdrop overlay — under menu
         if (isMenuOpen)
@@ -257,7 +386,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           left: isMenuOpen ? 0 : -320,
           child: Material(
             // no const, no Scaffold
-            color: Colors.white.themed(context), // menu background
+            color: Colors.white.themedWith(isDark), // menu background
             child: DashboardMenu(
               onClose: () => setState(() => isMenuOpen = false),
               isDarkMode: isDark,
@@ -269,6 +398,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               lastName: userProfile?.lastName ?? 'User',
               email: userEmail,
               profilePictureUrl: userProfile?.profilePictureUrl,
+              onProfileUpdate: () => _loadDashboardData(),
             ),
           ),
         ),
@@ -387,6 +517,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     );
                                   },
                             )
+                          : userProfile?.profilePictureUrl != null &&
+                                userProfile!.profilePictureUrl!.isNotEmpty
+                          ? Image.file(
+                              File(userProfile!.profilePictureUrl!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    107,
+                                    164,
+                                    255,
+                                  ),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: Colors.black,
+                                    size: 30,
+                                  ),
+                                );
+                              },
+                            )
                           : Container(
                               color: const Color.fromARGB(255, 107, 164, 255),
                               child: const Icon(
@@ -448,6 +599,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildSearch(BuildContext context, bool isDark) {
     return (TextField(
       controller: _searchController,
+      onChanged: _filterResults,
       style: TextStyle(color: const Color(0xFF2B2F33).themedWith(isDark)),
       decoration: InputDecoration(
         hintText: "search records, doctors, medications..",
@@ -475,6 +627,169 @@ class _DashboardScreenState extends State<DashboardScreen> {
         fillColor: Colors.white.themedWith(isDark),
       ),
     ));
+  }
+
+  Widget _buildSearchResultsOverlay(bool isDark) {
+    final trimmedQuery = _searchController.text.trim();
+    if (trimmedQuery.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.5,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.themedWith(isDark),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(isDark ? 50 : 20),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: const Color(0xFFE5E7EB).themedWith(isDark),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text(
+                "Search Results (${_globalSearchResults.length})",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.themedWith(isDark),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: _globalSearchResults.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 40,
+                              color: Colors.grey.themedWith(isDark),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              "No matches found",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: Colors.grey.themedWith(isDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: _globalSearchResults.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final result = _globalSearchResults[index];
+                        IconData icon;
+                        Color iconColor;
+
+                        switch (result.type) {
+                          case _SearchResultType.appointment:
+                            icon = Icons.calendar_today_rounded;
+                            iconColor = const Color(0xFF277AFF);
+                            break;
+                          case _SearchResultType.medication:
+                            icon = Icons.medication_rounded;
+                            iconColor = const Color(0xFF4CAF50);
+                            break;
+                          case _SearchResultType.diagnosis:
+                            icon = Icons.description_rounded;
+                            iconColor = const Color(0xFFFF9800);
+                            break;
+                        }
+
+                        return ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: iconColor.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(icon, color: iconColor, size: 20),
+                          ),
+                          title: Text(
+                            result.title,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF2B2F33).themedWith(isDark),
+                            ),
+                          ),
+                          subtitle: Text(
+                            result.subtitle,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              color: Colors.grey.themedWith(isDark),
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          onTap: () {
+                            // Clear search and navigate
+                            _searchController.clear();
+                            _filterResults("");
+
+                            switch (result.type) {
+                              case _SearchResultType.appointment:
+                                Navigator.pushNamed(
+                                  context,
+                                  '/appointmentDetail',
+                                  arguments: result.originalObject,
+                                );
+                                break;
+                              case _SearchResultType.medication:
+                                Navigator.pushNamed(
+                                  context,
+                                  '/medDetail',
+                                  arguments: result.originalObject,
+                                );
+                                break;
+                              case _SearchResultType.diagnosis:
+                                Navigator.pushNamed(
+                                  context,
+                                  '/diagnosisDetail',
+                                  arguments: result.originalObject,
+                                );
+                                break;
+                            }
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildVitalStat(
@@ -511,8 +826,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/profile'),
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          '/profile',
+                        ).then((_) => _loadDashboardData()),
                         icon: Icon(
                           Icons.edit,
                           color: const Color(0xFF6C7278).themedWith(isDark),
@@ -1022,20 +1339,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            if (diagnoses.isEmpty)
+            if (_filteredDiagnoses.isEmpty)
               Container(
                 padding: const EdgeInsets.all(32),
                 width: double.infinity,
                 child: Column(
                   children: [
                     Icon(
-                      Icons.medical_information_outlined,
+                      _searchController.text.isEmpty
+                          ? Icons.medical_information_outlined
+                          : Icons.search_off_outlined,
                       size: 48,
                       color: Colors.grey.themedWith(isDark),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No Diagnosis yet',
+                      _searchController.text.isEmpty
+                          ? "No diagnoses yet"
+                          : "No results matched your search",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.themedWith(isDark),
@@ -1046,120 +1368,121 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               )
             else
-              ...diagnoses.map(
-                (diagnosis) => Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(
-                      9,
-                      108,
-                      114,
-                      120,
-                    ).themedWith(isDark),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE5E7EB).themedWith(isDark),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              ..._filteredDiagnoses
+                  .take(3)
+                  .map(
+                    (diagnosis) => Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 15),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(
+                          9,
+                          108,
+                          114,
+                          120,
+                        ).themedWith(isDark),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB).themedWith(isDark),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F1FF).themedWith(isDark),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: SvgPicture.asset(
-                              "assets/images/icon for Medvault/filetext.svg",
-                              width: 10,
-                              height: 10,
-                              colorFilter: const ColorFilter.mode(
-                                Color(0xFF277AFF),
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                diagnosis.title,
-                                style: TextStyle(
-                                  color: const Color(
-                                    0xFF2B2F33,
-                                  ).themedWith(isDark),
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Diagnosed: ${diagnosis.formattedDate}",
-                                style: TextStyle(
-                                  fontFamily: 'inter',
-                                  fontSize: 11,
-                                  color: const Color(
-                                    0xFF6C7278,
-                                  ).themedWith(isDark),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 3,
-                                  horizontal: 10,
-                                ),
+                                width: 40,
+                                height: 40,
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: diagnosis.statusBackgroundColor.themed(
-                                    context,
-                                  ),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: diagnosis.statusBorderColor.themed(
-                                      context,
-                                    ),
-                                    width: 1,
+                                  color: const Color(
+                                    0xFFE8F1FF,
+                                  ).themedWith(isDark),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: SvgPicture.asset(
+                                  "assets/images/icon for Medvault/filetext.svg",
+                                  width: 10,
+                                  height: 10,
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFF277AFF),
+                                    BlendMode.srcIn,
                                   ),
                                 ),
-                                child: Text(
-                                  diagnosis.statusText,
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 11,
-                                    color: diagnosis.statusTextColor.themed(
-                                      context,
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    diagnosis.title,
+                                    style: TextStyle(
+                                      color: const Color(
+                                        0xFF2B2F33,
+                                      ).themedWith(isDark),
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
                                     ),
-                                    fontWeight: FontWeight.w600,
                                   ),
-                                ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Diagnosed: ${diagnosis.formattedDate}",
+                                    style: TextStyle(
+                                      fontFamily: 'inter',
+                                      fontSize: 11,
+                                      color: const Color(
+                                        0xFF6C7278,
+                                      ).themedWith(isDark),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 3,
+                                      horizontal: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: diagnosis.statusBackgroundColor
+                                          .themedWith(isDark),
+                                      borderRadius: BorderRadius.circular(5),
+                                      border: Border.all(
+                                        color: diagnosis.statusBorderColor
+                                            .themedWith(isDark),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      diagnosis.statusText,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 11,
+                                        color: diagnosis.statusTextColor
+                                            .themedWith(isDark),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
+                          GestureDetector(
+                            onTap: () {},
+                            child: Icon(
+                              Icons.arrow_forward_ios,
+                              size: 15,
+                              color: const Color(0xFFB0B4B8).themedWith(isDark),
+                            ),
+                          ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 15,
-                          color: const Color(0xFFB0B4B8).themedWith(isDark),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
           ],
         ),
       ),
@@ -1198,27 +1521,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 20),
 
-            if (medicationReminders.isEmpty)
+            if (_filteredDisplayDoses.isEmpty)
               Container(
                 padding: const EdgeInsets.all(32),
                 width: double.infinity,
                 child: Column(
                   children: [
                     Icon(
-                      Icons.medication_outlined,
+                      _searchController.text.isEmpty
+                          ? Icons.medication_outlined
+                          : Icons.search_off_rounded,
                       size: 48,
                       color: Colors.grey.themedWith(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _searchController.text.isEmpty
+                          ? "No items scheduled for today"
+                          : "No results matched your search",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.themedWith(isDark),
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ],
                 ),
               )
             else
-              ..._displayDoses.map((dose) {
+              ..._filteredDisplayDoses.map((dose) {
                 final bool isNextDue =
                     _displayDoses.isNotEmpty &&
-                    _displayDoses.any((d) => !d.isTaken) &&
+                    _filteredDisplayDoses.any((d) => !d.isTaken) &&
                     dose ==
-                        _displayDoses.firstWhere(
+                        _filteredDisplayDoses.firstWhere(
                           (d) => !d.isTaken,
                           orElse: () => dose,
                         );
@@ -1470,6 +1807,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+}
+
+enum _SearchResultType { appointment, medication, diagnosis }
+
+class _GlobalSearchResult {
+  final String title;
+  final String subtitle;
+  final _SearchResultType type;
+  final dynamic originalObject;
+
+  _GlobalSearchResult({
+    required this.title,
+    required this.subtitle,
+    required this.type,
+    required this.originalObject,
+  });
 }
 
 class _Dose {

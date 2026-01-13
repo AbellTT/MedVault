@@ -60,7 +60,6 @@ class AuthService {
       }
       return userCredential;
     } catch (e) {
-      print('Error signing in with Google: $e');
       rethrow;
     }
   }
@@ -69,10 +68,12 @@ class AuthService {
   Future<void> signOut(BuildContext context) async {
     await _googleSignIn.signOut();
     await _auth.signOut();
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/signup',
-      (Route<dynamic> route) => false,
-    );
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/signup',
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 }

@@ -1,8 +1,11 @@
+import 'package:app/widgets/loading_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:app/utils/color_extensions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app/services/auth_service.dart';
 import 'package:app/services/connectivity_helper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Check internet first
     final hasInternet = await ConnectivityHelper.hasInternet();
     if (!hasInternet) {
-      if (mounted) {
+      if (context.mounted) {
         messenger.showSnackBar(
           const SnackBar(
             content: Text("No internet connection. Please connect to log in."),
@@ -50,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
       // Check if widget is still mounted before showing snackbar
-      if (!mounted) return true;
+      if (!context.mounted) return true;
       messenger.showSnackBar(
         const SnackBar(
           content: Text("Logged in successfully"),
@@ -71,20 +74,19 @@ class _LoginScreenState extends State<LoginScreen> {
         message = e.message ?? 'Authentication error.';
       }
       // Check if widget is still mounted
-      if (mounted) {
+      if (context.mounted) {
         messenger.showSnackBar(SnackBar(content: Text(message)));
       }
       return false;
     } catch (e) {
-      print("Unexpected error: $e");
-      if (mounted) {
+      if (context.mounted) {
         messenger.showSnackBar(
           SnackBar(content: Text("An error occurred: $e")),
         );
       }
       return false;
     } finally {
-      if (mounted) {
+      if (context.mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -94,8 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white.themedWith(isDark),
       body: Center(
         child: SafeArea(
           child: SingleChildScrollView(
@@ -118,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.center,
                     width: 250,
                     height: 70,
-                    child: const Text.rich(
+                    child: Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(
@@ -126,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF277AFF),
+                              color: const Color(0xFF277AFF).themedWith(isDark),
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -135,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF3AC0A0),
+                              color: const Color(0xFF3AC0A0).themedWith(isDark),
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -147,12 +150,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.center,
                     width: 250,
                     height: 50,
-                    child: const Text(
+                    child: Text(
                       "Your Health, Simplified & Secured",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
-                        color: Color(0xFF61677D),
+                        color: const Color(0xFF61677D).themedWith(isDark),
                         fontFamily: 'Inter_28pt-Regular',
                       ),
                     ),
@@ -202,7 +205,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ButtonStyle(
                         // Border color
                         side: WidgetStateProperty.all(
-                          const BorderSide(color: Color(0xFF3AC0A0), width: 2),
+                          BorderSide(
+                            color: const Color(0xFF3AC0A0).themedWith(isDark),
+                            width: 2,
+                          ),
                         ),
 
                         // Rounded corners
@@ -221,7 +227,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               0xFF3AC0A0,
                             ); // selected background
                           }
-                          return Colors.white; // unselected background
+                          return Colors.white.themed(
+                            context,
+                          ); // unselected background
                         }),
 
                         // Text color
@@ -231,7 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (states.contains(WidgetState.selected)) {
                             return Colors.white; // selected text color
                           }
-                          return Colors.black87; // unselected text color
+                          return const Color(
+                            0xFF2B2F33,
+                          ).themedWith(isDark); // unselected text color
                         }),
                       ),
                     ),
@@ -241,41 +251,50 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Email
                   TextFormField(
                     controller: emailController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: "Email",
                       floatingLabelBehavior: FloatingLabelBehavior.auto,
 
                       // Change floating label color
                       floatingLabelStyle: TextStyle(
-                        color: Color(
+                        color: const Color(
                           0xFF277AFF,
-                        ), // change to any color you want
+                        ).themedWith(isDark), // change to any color you want
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         fontFamily: "Inter_28pt-Regular",
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color.fromARGB(255, 223, 227, 230),
+                          color: const Color.fromARGB(
+                            255,
+                            223,
+                            227,
+                            230,
+                          ).themedWith(isDark),
                           width: 1,
                         ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
                       ),
 
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color(0xFF277AFF),
+                          color: const Color(0xFF277AFF).themedWith(isDark),
                           width: 1.5,
                         ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
                       ),
 
-                      errorBorder: OutlineInputBorder(
+                      errorBorder: const OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.red, width: 1.5),
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
 
-                      focusedErrorBorder: OutlineInputBorder(
+                      focusedErrorBorder: const OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.red, width: 2),
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
@@ -296,35 +315,44 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Password
                   TextFormField(
                     controller: passwordController,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: "Password",
                       floatingLabelBehavior: FloatingLabelBehavior.auto,
 
                       // Change floating label color
-                      floatingLabelStyle: const TextStyle(
-                        color: Color(
+                      floatingLabelStyle: TextStyle(
+                        color: const Color(
                           0xFF277AFF,
-                        ), // change to any color you want
+                        ).themedWith(isDark), // change to any color you want
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         fontFamily: "Inter_28pt-Regular",
                       ),
 
-                      enabledBorder: const OutlineInputBorder(
+                      enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color.fromARGB(255, 223, 227, 230),
+                          color: const Color.fromARGB(
+                            255,
+                            223,
+                            227,
+                            230,
+                          ).themedWith(isDark),
                           width: 1,
                         ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
                       ),
 
-                      focusedBorder: const OutlineInputBorder(
+                      focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color(0xFF277AFF),
+                          color: const Color(0xFF277AFF).themedWith(isDark),
                           width: 1.5,
                         ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
                       ),
 
                       errorBorder: const OutlineInputBorder(
@@ -380,7 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               if (states.contains(WidgetState.selected)) {
                                 return const Color(0xFF277AFF);
                               }
-                              return Colors.white;
+                              return Colors.white.themedWith(isDark);
                             }),
                             side: WidgetStateBorderSide.resolveWith((states) {
                               if (states.contains(WidgetState.selected)) {
@@ -389,8 +417,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 2,
                                 );
                               }
-                              return const BorderSide(
-                                color: Color.fromARGB(255, 223, 227, 230),
+                              return BorderSide(
+                                color: const Color.fromARGB(
+                                  255,
+                                  223,
+                                  227,
+                                  230,
+                                ).themedWith(isDark),
                                 width: 2,
                               );
                             }),
@@ -399,12 +432,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             visualDensity: VisualDensity
                                 .compact, // ← reduces default spacing
                           ),
-                          const Text(
+                          Text(
                             "Remember Me",
                             style: TextStyle(
                               fontSize: 16,
                               fontFamily: 'Inter_28pt-Regular',
-                              color: Color(0xFF6C7278),
+                              color: const Color(0xFF6C7278).themedWith(isDark),
                             ),
                           ),
                         ],
@@ -416,11 +449,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Navigate to forgot password screen or show dialog
                           Navigator.pushNamed(context, '/forgot-password');
                         },
-                        child: const Text(
+                        child: Text(
                           "Forgot Password?",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF277AFF),
+                            color: const Color(0xFF277AFF).themedWith(isDark),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -441,9 +474,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 29,
                                 88,
                                 184,
-                              ); // darker green-ish
+                              ).themedWith(isDark); // darker green-ish
                             }
-                            return const Color(0xFF277AFF); // your normal green
+                            return const Color(
+                              0xFF277AFF,
+                            ).themedWith(isDark); // your normal green
                           },
                         ),
                         padding: WidgetStateProperty.all(
@@ -460,20 +495,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           : () async {
                               if (_formKey.currentState!.validate()) {
                                 bool success = await loginUser();
-                                if (success && mounted) {
-                                  Navigator.pushNamed(context, '/getStarted');
+                                if (success && context.mounted) {
+                                  // Smart Redirect: Check if setup is finished
+                                  final uid =
+                                      FirebaseAuth.instance.currentUser?.uid;
+                                  if (uid != null) {
+                                    final doc = await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(uid)
+                                        .get();
+                                    final data = doc.data();
+                                    final setupComplete =
+                                        data != null &&
+                                        data['setup_complete'] == true;
+
+                                    if (context.mounted) {
+                                      Navigator.pushNamedAndRemoveUntil(
+                                        context,
+                                        setupComplete
+                                            ? '/dashboard'
+                                            : '/getStarted',
+                                        (route) => false,
+                                      );
+                                    }
+                                  }
                                 }
                               }
                             },
                       child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                          ? const LoadingAnimation(size: 40)
                           : const Text(
                               "Log In",
                               style: TextStyle(
@@ -494,7 +544,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Container(
                           height: 1,
-                          color: Colors.grey.shade300,
+                          color: const Color(0xFFE0E0E0).themedWith(isDark),
                         ),
                       ),
                       Padding(
@@ -502,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Text(
                           "OR",
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: const Color(0xFF6C7278).themedWith(isDark),
                             fontFamily: 'Inter_28pt-Regular',
                             fontSize: 14,
                           ),
@@ -511,7 +561,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Container(
                           height: 1,
-                          color: Colors.grey.shade300,
+                          color: const Color(0xFFE0E0E0).themedWith(isDark),
                         ),
                       ),
                     ],
@@ -533,7 +583,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         side: WidgetStateProperty.all(
-                          BorderSide(color: Colors.grey.shade300, width: 1.5),
+                          BorderSide(
+                            color: const Color(0xFFE2E4E8).themedWith(isDark),
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       onPressed: _isGoogleLoading
@@ -543,13 +596,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _isGoogleLoading = true;
                               });
                               final messenger = ScaffoldMessenger.of(context);
-                              final navigator = Navigator.of(context);
 
                               // Check internet first
                               final hasInternet =
                                   await ConnectivityHelper.hasInternet();
                               if (!hasInternet) {
-                                if (mounted) {
+                                if (context.mounted) {
                                   messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text(
@@ -567,17 +619,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                     .signInWithGoogle(isLoginOnly: true);
 
                                 if (userCredential != null) {
-                                  if (!mounted) return;
-                                  await navigator.pushNamed('/dashboard');
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Signed in with Google successfully!',
+                                  if (!context.mounted) return;
+
+                                  // Smart Redirect: Check if setup is finished
+                                  final uid = userCredential.user?.uid;
+                                  bool setupComplete = false;
+                                  if (uid != null) {
+                                    final doc = await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(uid)
+                                        .get();
+                                    final data = doc.data();
+                                    setupComplete =
+                                        data != null &&
+                                        data['setup_complete'] == true;
+                                  }
+
+                                  if (context.mounted) {
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      setupComplete
+                                          ? '/dashboard'
+                                          : '/getStarted',
+                                      (route) => false,
+                                    );
+
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Signed in with Google successfully!',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                        duration: Duration(seconds: 2),
                                       ),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
+                                    );
+                                  }
                                 }
                               } catch (e) {
                                 messenger.showSnackBar(
@@ -589,7 +665,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 );
                               } finally {
-                                if (mounted) {
+                                if (context.mounted) {
                                   setState(() {
                                     _isGoogleLoading = false;
                                   });
@@ -614,11 +690,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 24,
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   "Sign in with Google",
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Colors.black87,
+                                    color: const Color(
+                                      0xFF2B2F33,
+                                    ).themedWith(isDark),
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w500,
                                   ),

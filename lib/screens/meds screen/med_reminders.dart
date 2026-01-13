@@ -52,8 +52,9 @@ class _MedRemindersState extends State<MedReminders> {
     final dateKey = DateTime.now().toIso8601String().split('T')[0];
     int count = 0;
     for (var med in _medications) {
-      if (med.isCompleted)
-        continue; // If permanently completed, don't count? Or maybe do?
+      if (med.isCompleted) {
+        continue;
+      }
       final takenToday = med.takenDoses[dateKey] ?? [];
       count += takenToday.length;
     }
@@ -65,6 +66,7 @@ class _MedRemindersState extends State<MedReminders> {
     String time,
     bool isTaken,
   ) async {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     setState(() {
       _isProcessing = true;
     });
@@ -84,7 +86,7 @@ class _MedRemindersState extends State<MedReminders> {
           SnackBar(
             content: Text(
               'Error updating status',
-              style: TextStyle(color: Colors.white.themed(context)),
+              style: TextStyle(color: Colors.white.themedWith(isDark)),
             ),
             backgroundColor: Colors.red,
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:app/services/biometric_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:app/utils/color_extensions.dart';
 
 class AppLockScreen extends StatefulWidget {
   final VoidCallback onUnlocked;
@@ -55,10 +56,11 @@ class _AppLockScreenState extends State<AppLockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Disable back button bypass
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return PopScope(
+      canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.white.themedWith(isDark),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -70,28 +72,28 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F9FF),
+                    color: const Color(0xFFF5F9FF).themedWith(isDark),
                     shape: BoxShape.circle,
                   ),
                   child: SvgPicture.asset(
                     'assets/images/icon for Medvault/Lock.svg',
                     width: 64,
                     height: 64,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF277AFF),
+                    colorFilter: ColorFilter.mode(
+                      const Color(0xFF277AFF).themedWith(isDark),
                       BlendMode.srcIn,
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 // Title
-                const Text(
+                Text(
                   'MedVault Locked',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Poppins',
-                    color: Color(0xFF1A1A1A),
+                    color: const Color(0xFF1A1A1A).themedWith(isDark),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -99,10 +101,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 Text(
                   _statusMessage,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontFamily: 'Poppins',
-                    color: Color(0xFF757575),
+                    color: const Color(0xFF757575).themedWith(isDark),
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -113,8 +115,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
                   child: ElevatedButton(
                     onPressed: _isAuthenticating ? null : _authenticate,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF277AFF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color(
+                        0xFF277AFF,
+                      ).themedWith(isDark),
+                      foregroundColor: Colors.white.themedWith(isDark),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),

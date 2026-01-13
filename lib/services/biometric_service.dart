@@ -29,20 +29,19 @@ class BiometricService {
         ),
       );
     } catch (e) {
-      print('Biometric authentication error: $e');
       return false;
     }
   }
 
-  /// Save the biometric preference locally
-  static Future<void> setBiometricEnabled(bool enabled) async {
+  /// Save the biometric preference locally for a specific user
+  static Future<void> setBiometricEnabled(String uid, bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricKey, enabled);
+    await prefs.setBool('${_biometricKey}_$uid', enabled);
   }
 
   /// Check if biometrics are enabled by the user in the app settings
-  static Future<bool> isBiometricEnabled() async {
+  static Future<bool> isBiometricEnabled(String uid) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_biometricKey) ?? false;
+    return prefs.getBool('${_biometricKey}_$uid') ?? false;
   }
 }
