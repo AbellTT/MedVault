@@ -864,7 +864,7 @@ class _MedDetailState extends State<MedDetail> {
                         formattedTime; // Keep internal as 24h for saving logic
                   }
                 },
-                decoration: _inputDecoration('--:-- --', isDark),
+                decoration: _inputDecoration('--:-- --', isDark), 
               ),
               const SizedBox(height: 12),
               Row(

@@ -249,28 +249,6 @@ class NotificationService {
     );
   }
 
-  Future<void> scheduleTestNotification({int seconds = 10}) async {
-    final now = tz.TZDateTime.now(tz.local);
-    final scheduledDate = now.add(Duration(seconds: seconds));
-    const id = 999999;
-
-    debugPrint(
-      'TEST NOTIFICATION: Scheduling for $scheduledDate (in $seconds s)',
-    );
-
-    await _notifications.zonedSchedule(
-      id,
-      'Test Notification',
-      'This is a test notification from MedVault.',
-      scheduledDate,
-      _simpleNotificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: 'test_notification',
-    );
-  }
-
   Future<void> cancelAllReminders() async {
     debugPrint('CANCELLING ALL notifications');
     await _notifications.cancelAll();

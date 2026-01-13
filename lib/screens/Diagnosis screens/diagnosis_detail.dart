@@ -324,7 +324,7 @@ class _DiagnosisDetailScreenState extends State<DiagnosisDetailScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error uploading: $e'),
+          content: Text('Permission denied or error picking file: $e'),
           backgroundColor: Colors.red,
         ),
       );
