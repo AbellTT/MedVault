@@ -45,7 +45,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_selectedDiagnosis == null) {
-      final args = ModalRoute.of(context)!.settings.arguments;
+      final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _selectedDiagnosis = args;
       }

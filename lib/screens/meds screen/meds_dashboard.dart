@@ -411,11 +411,21 @@ class _MedsDashboardState extends State<MedsDashboard> {
                           child: Column(
                             children: [
                               const SizedBox(height: 40),
-                              Icon(
-                                Icons.search_off_rounded,
-                                size: 48,
-                                color: Colors.grey.themedWith(isDark),
-                              ),
+                              _searchController.text.isEmpty
+                                  ? SvgPicture.asset(
+                                      'assets/images/icon for Medvault/pill.svg',
+                                      width: 48,
+                                      height: 48,
+                                      colorFilter: ColorFilter.mode(
+                                        Colors.grey.themedWith(isDark),
+                                        BlendMode.srcIn,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.search_off_rounded,
+                                      size: 48,
+                                      color: Colors.grey.themedWith(isDark),
+                                    ),
                               const SizedBox(height: 16),
                               Text(
                                 _searchController.text.isEmpty

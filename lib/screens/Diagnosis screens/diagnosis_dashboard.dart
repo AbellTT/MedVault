@@ -318,7 +318,9 @@ class _DiagnosisDashboardState extends State<DiagnosisDashboard> {
                       child: Column(
                         children: [
                           Icon(
-                            Icons.search_off_outlined,
+                            searchController.text.isEmpty
+                                ? Icons.folder_open_outlined
+                                : Icons.search_off_outlined,
                             size: 48,
                             color: Colors.grey.themedWith(isDark),
                           ),

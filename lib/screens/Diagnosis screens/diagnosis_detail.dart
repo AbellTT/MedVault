@@ -2003,7 +2003,8 @@ class _DiagnosisDetailScreenState extends State<DiagnosisDetailScreen>
                       Navigator.pushNamed(
                         context,
                         '/medDetail',
-                      ); // Generic detail for now
+                        arguments: medication,
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(

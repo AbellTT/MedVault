@@ -367,6 +367,27 @@ class _AddDiagnosisState extends State<AddDiagnosis> {
                                   initialDate: DateTime.now(),
                                   firstDate: DateTime(1900),
                                   lastDate: DateTime.now(),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: ColorScheme.light(
+                                          primary: const Color(
+                                            0xFF3AC0A0,
+                                          ).themedWith(isDark),
+                                          onPrimary: Colors.white.themedWith(
+                                            isDark,
+                                          ),
+                                          surface: Colors.white.themedWith(
+                                            isDark,
+                                          ),
+                                          onSurface: const Color(
+                                            0xFF2B2F33,
+                                          ).themedWith(isDark),
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
                                 );
                                 if (picked != null) {
                                   setState(() {
@@ -755,6 +776,27 @@ class _AddDiagnosisState extends State<AddDiagnosis> {
                                   initialDate: DateTime.now(),
                                   firstDate: DateTime(1900),
                                   lastDate: DateTime.now(),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: ColorScheme.light(
+                                          primary: const Color(
+                                            0xFF3AC0A0,
+                                          ).themedWith(isDark),
+                                          onPrimary: Colors.white.themedWith(
+                                            isDark,
+                                          ),
+                                          surface: Colors.white.themedWith(
+                                            isDark,
+                                          ),
+                                          onSurface: const Color(
+                                            0xFF2B2F33,
+                                          ).themedWith(isDark),
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
                                 );
                                 if (picked != null) {
                                   setState(() {

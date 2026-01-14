@@ -685,6 +685,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   final uid = userCredential.user?.uid;
                                   bool setupComplete = false;
                                   if (uid != null) {
+                                    // Ensure account_info is initialized even for existing users (repair affected accounts)
+                                    final user = userCredential.user;
+                                    await DatabaseService()
+                                        .createOrUpdateUserData({
+                                          'account_info': {
+                                            'email': user?.email,
+                                            'profile_picture': user?.photoURL,
+                                          },
+                                        });
+
                                     final doc = await FirebaseFirestore.instance
                                         .collection('users')
                                         .doc(uid)

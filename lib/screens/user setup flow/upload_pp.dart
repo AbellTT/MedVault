@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:app/services/database_service.dart';
 import 'package:app/utils/color_extensions.dart';
@@ -366,12 +367,16 @@ class _UploadPPScreenState extends State<UploadPPScreen>
                               ElevatedButton(
                                 onPressed: () async {
                                   if (_formKey.currentState!.validate()) {
+                                    final user =
+                                        FirebaseAuth.instance.currentUser;
                                     // Update Firestore
                                     await DatabaseService()
                                         .createOrUpdateUserData({
+                                          'account_info': {
+                                            'email': user?.email,
+                                          },
                                           'setup_complete': true,
                                         });
-
                                     if (!context.mounted) return;
                                     Navigator.pushNamedAndRemoveUntil(
                                       context,

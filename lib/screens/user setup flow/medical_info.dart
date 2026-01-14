@@ -251,15 +251,6 @@ class _MedicalInfoSCreenState extends State<MedicalInfoSCreen>
                                                                     counterText:
                                                                         "",
                                                                   ),
-                                                                  validator: (value) {
-                                                                    if (value ==
-                                                                            null ||
-                                                                        value
-                                                                            .isEmpty) {
-                                                                      return 'Please enter condition name';
-                                                                    }
-                                                                    return null;
-                                                                  },
                                                                 ),
                                                               ),
                                                               if (_textControllers

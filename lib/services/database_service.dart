@@ -33,13 +33,21 @@ class DatabaseService {
     final uid = currentUid;
     if (uid == null) return;
 
-    // Flatten the map to support deep merging of nested fields in Firestore
-    final flatData = _flatten(data);
+    final docRef = _db.collection('users').doc(uid);
 
-    await _db
-        .collection('users')
-        .doc(uid)
-        .set(flatData, SetOptions(merge: true));
+    try {
+      // Try to update using flattened data to achieve deep merge of nested fields.
+      // update() interprets dots in keys as field separators.
+      await docRef.update(_flatten(data));
+    } catch (e) {
+      // If the document doesn't exist, use set() with the original (unflattened) data.
+      // This ensures the initial document structure uses real nested Maps.
+      if (e is FirebaseException && e.code == 'not-found') {
+        await docRef.set(data);
+      } else {
+        rethrow;
+      }
+    }
 
     // Clear cache to force refresh on next fetch
     _cachedUserData = null;
